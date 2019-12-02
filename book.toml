@@ -1,13 +1,45 @@
 [book]
-authors = ["The async-std maintainers"]
-language = "en"
-multilingual = false
-src = "src"
+authors = ["The async-std maintainers", "译者：Yobrave"]
 title = "Async programming in Rust with async-std"
+description = "Async programming in Rust with async-std"
+language = "zh-CN"
 
 [build]
+build-dir = "docs"
 create-missing = false
+use-default-preprocessors = false
+
+[preprocessor.links]
+# renderers = ["html"]
 
 [output.html]
-git-repository-url = "https://github.com/async-rs/async-std"
-git-repository-icon = "fa-github"
+mathjax-support = false
+theme = "theme"
+curly-quotes = true
+google-analytics = "UA-128555056-1"
+# additional-css = ["theme/custom.css"]
+git_repository_url = "https://github.com/chinanf-boy/async-std-zh"
+git_repository_icon = "fa-github"
+# additional-js = ["theme/custom.js"]
+
+# [output.linkcheck]
+# follow-web-links = true
+# traverse-parent-directories = false
+# exclude = [ "google\\.com" ]
+
+[output.html.playpen]
+# editor = "./path/to/editor"
+editable = false
+
+[output.html.search]
+enable = true
+# searcher = "./path/to/searcher"
+limit-results = 30
+teaser-word-count = 30
+use-boolean-and = true
+boost-title = 2
+boost-hierarchy = 1
+boost-paragraph = 1
+expand = true
+heading-split-level = 3
+# copy-js = true
