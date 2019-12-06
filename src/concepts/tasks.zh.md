@@ -1,8 +1,8 @@
 # Tasks
 
-既然我们知道未来是什么，我们就要经营它们！
+既然我们知道 Future 是什么，就想要撸它！
 
-在`async-std`，和[`tasks`][tasks]模块对此负责。最简单的方法是使用`block_on`功能：
+在`async-std`，[`tasks`][tasks]模块负责这项行为。最简单的方法是使用`block_on`函数：
 
 ```rust,edition2018
 # extern crate async_std;
@@ -29,7 +29,7 @@ fn main() {
 }
 ```
 
-这就要求运行时`async_std`执行读取文件的代码。不过，让我们一个接一个，从里到外。
+这就要求 runtime 先放进`async_std`烤一烤，再去执行这份会读取文件的代码。不过停一停，让我们一个个来，从内到外。
 
 ```rust,edition2018
 # extern crate async_std;
@@ -51,7 +51,7 @@ async {
 };
 ```
 
-这是一个`async` *块*. 异步块是调用`async`函数，并将指示编译器包含所有相关的指令。在Rust中，所有块都返回一个值，并且`async`块碰巧返回此类值`Future`.
+这是一个`async` _代码块(block)_。 async block 是调用`async`函数的必要条件，所以同样，还会指示编译器，去包括所有相关指令。在 Rust 中，所有 block 都返回一个值，并且`async` block 就是会返回`Future`值。
 
 但让我们来看看有趣的部分：
 
@@ -61,26 +61,26 @@ async {
 task::spawn(async { });
 ```
 
-`spawn`拿一个`Future`开始在`Task`. 它返回一个`JoinHandle`. 生锈的未来有时被称为*寒冷的*未来。你需要一些东西来管理他们。为了运行一个未来，可能需要一些额外的簿记，例如它是运行的还是完成的，它放在内存中的位置以及当前的状态。这个记账部分被抽象成`Task`.
+`spawn`拿了一个`Future`，并在`Task`上开始 running。它返回一个`JoinHandle`。 这时的 Future 在 Rust 社区中，有时被称为*冻(cold)* Futures。你需要一些东西来管理/激活他们。为了运行一个 Future，可能需要一些额外的记录信息，例如，它是 running 还是完成的状态，和它放在内存中的位置以及当前的状态。这个记录部分被抽象成`Task`。
 
-一个`Task`类似于`Thread`，但有一些小的区别：它将由程序而不是操作系统内核调度，如果遇到需要等待的点，程序本身将负责再次唤醒它。我们稍后再谈。一个`async_std`任务也可以有名称和ID，就像线程一样。
+一个`Task`类似于`Thread`，但有一些小的区别：它将由程序，而不是操作系统内核调度，如果遇到需要等待(wait)的点，程序本身承担起再次唤醒它的负责 —— 这个我们稍后再谈。一个`async_std` task 也可以有一个 name 和一个 ID，就像线程一样。
 
-现在，只要你知道`spawn`一个任务，它将继续在后台运行。这个`JoinHandle`它本身就是一个未来，一旦`Task`已经接近尾声了。很像`threads`以及`join`函数，我们现在可以调用`block_on`把手放在*块*程序（或调用线程，具体来说）并等待它完成。
+现在，已给出足够的知识了：你知道了，一旦`spawn`(生)出一个 task，它将继续在后台运行。这个`JoinHandle`它本身就是一个 Future，一旦`Task`已经接近完成了，自然跟随着完成。这与`threads`以及`join`函数很像，我们现在可以通过在'控制杆'上调用`block_on`，*阻塞*程序（或调用线程，具体来说的话）并等待它完成。
 
 ## Tasks in `async_std`
 
-中的任务`async_std`是核心抽象之一。很像铁锈`thread`他们在原始概念的基础上提供了一些实用的功能。`Tasks`与运行时有关系，但它们本身是独立的。`async_std`任务具有许多理想的属性：
+`async_std`中的 Tasks 是核心抽象之一。很像 Rust 的`thread`，他们在原始概念的基础上，提供了一些实用的函数。`Tasks`与 runtime 之间存有关系，但它们本身是独立的。`async_std`任务具有许多理想的特性：
 
--   它们被分配到一个单独的分配中
--   所有任务都有*反馈语*，它允许它们通过`JoinHandle`
--   它们为调试提供了有用的元数据
--   它们支持任务本地存储
+- 它们被分配到一个单独的分配(single allocation)中
+- 所有 tasks 都有*后门通道*，它允许它们通过`JoinHandle` 传播 results 和 errors 到那 spawning task。
+- 它们为调试提供了有用的元数据
+- 它们支持 task 本地存储
 
-`async_std`s任务API为您处理备份运行时的设置和拆卸，而不依赖于显式启动的运行时。
+`async_std`的 task API 为您处理，一个后台的 runtime 的设置和拆卸，而不用依赖于一个显式启动的 runtime。
 
 ## Blocking
 
-`Task`假设s运行*同时*，可能是通过共享执行线程。这意味着阻塞*操作系统线程*，例如`std::thread::sleep`或是铁锈的io功能`std`图书馆将*停止执行共享此线程的所有任务*. 其他库（如数据库驱动程序）也有类似的行为。请注意*阻塞当前线程*它本身并不是不良行为，只是与`async-std`. 基本上，千万不要这样做：
+假设，`Task`是*同时*运行的，(可能)具有共享执行的潜在线程。这意味着，能够阻塞*操作系统线程*的操作，例如`std::thread::sleep`或是 Rust `std` 库的 io 函数，会让*共享此线程的所有 tasks，停止执行*。其他库（如数据库驱动程序）也有类似的行为。请注意*阻塞当前线程*它本身并不是不良行为，只是与`async-std`的并发执行模型不能混用。本质上来说，千万不要这样做：
 
 ```rust,edition2018
 # extern crate async_std;
@@ -93,15 +93,15 @@ fn main() {
 }
 ```
 
-如果要混合操作类型，请考虑将这些阻塞操作放在单独的`thread`.
+如果要混合不同操作，请考虑将这些阻塞操作，放在单独的`thread`上。
 
 ## Errors and panics
 
-任务通过正常模式报告错误：如果它们是错误的，那么`Output`应该是善良的`Result<T,E>`.
+Tasks 通过正常模式报告错误：如果它们是错误的，那么它们的`Output`应该是某`Result<T,E>`类型。
 
-万一`panic`，行为的不同取决于是否有一个合理的部分处理`panic`. 如果没有，程序*中止*.
+万一`panic`，行为的不同之处取决于，是否有一个合理的部分处理`panic`。 如果没有，程序*中止*.
 
-实际上，这意味着`block_on`将恐慌传播到阻塞组件：
+实际上，这意味着，`block_on`会将 panics 传播到阻塞组件：
 
 ```rust,edition2018,should_panic
 # extern crate async_std;
@@ -118,7 +118,7 @@ thread 'async-task-driver' panicked at 'test', examples/panic.rs:8:9
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
 ```
 
-在恐慌生成的任务时将中止：
+在 panicing 阶段，一个 spawned task 将中止：
 
 ```rust,edition2018,should_panic
 # extern crate async_std;
@@ -139,12 +139,12 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
 Aborted (core dumped)
 ```
 
-一开始这可能看起来很奇怪，但另一个选择是默默地忽略衍生任务中的恐慌。当前的行为可以通过捕获派生任务中的恐慌并对自定义行为作出反应来改变。这为用户提供了恐慌处理策略的选择。
+一开始这可能看起来很奇怪，但另一个选择是默默忽略 spawned task 中的 panics。当前的行为是可以改变的，具体通过捕获 spawned task 中的 panics，并用自定义行为对其作出反应。这为用户提供了，处理 panics 策略的选择。
 
 ## Conclusion
 
-`async_std`附带一个有用的`Task`与类似于`std::thread`. 它以结构化和明确的方式涵盖了错误和恐慌行为。
+`async_std`附带一个有用的`Task`类型，与`std::thread` API 类似。 它以结构化和明确性的方式，涵盖了错误和 panics 行为。
 
-任务是独立的并发单元，有时它们需要通信。就在那里`Stream`我们进来。
+Tasks 作为独立的并发单元，有时，它们之间是需要通信的。这个 moment，`Stream`出现了。
 
 [tasks]: https://docs.rs/async-std/latest/async_std/task/index.html

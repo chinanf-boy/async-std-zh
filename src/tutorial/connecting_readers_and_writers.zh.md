@@ -1,8 +1,8 @@
 ## Connecting Readers and Writers
 
-那么我们如何确保读入邮件`connection_loop`流入相关`connection_writer_loop`？我们应该以某种方式保持`peers: HashMap<String, Sender<String>>`允许客户查找目标频道的地图。但是，此映射会有些共享的可变状态，因此我们必须包装一个`RwLock`并回答棘手的问题，即如果客户在收到消息的同时加入该怎么办。
+那么我们如何确保，`connection_loop`读到的信息流入对应的`connection_writer_loop`？我们应该以某种方式保有一个`peers: HashMap<String, Sender<String>>` map，一个允许客户查找目标频道的'地图'。但是，此 map 会有些共享的可变状态，因此我们必须裹入一个`RwLock`，并回答个棘手的问题，即如果客户端在收到消息的同时，加入该怎么办。
 
-使状态的推理更简单的一个技巧来自参与者模型。我们可以创建一个专门的经纪人任务，该任务拥有`peers`通过渠道映射并与其他任务进行通信。通过隐藏`peers`在这样的“ actor”任务中，我们无需使用互斥对象，并且还明确了序列化点。事件“鲍勃将消息发送给爱丽丝”的顺序和“爱丽丝加入”的顺序由代理的事件队列中相应事件的顺序确定。
+使状态的推理更简单的一个技巧，来自参与者模型(actor model)。我们可以创建一个专用的代理人（dedicated broker）任务，该任务拥有`peers` map ，并通过 channels 与其他任务进行通信。通过将`peers`隐藏在，如一个 "actor" 任务内，我们无需使用 mutxes，并且还明确了序列化点。两件事件，“Bob 将消息发送给 Alice”和“Alice 加入”的顺序，由代理人的事件队列中，相应事件的顺序确定。
 
 ```rust,edition2018
 # extern crate async_std;
@@ -86,8 +86,8 @@ async fn broker_loop(mut events: Receiver<Event>) -> Result<()> {
 }
 ```
 
-1.  代理应处理两种类型的事件：消息或新对等体的到达。
-2.  经纪人的内部状态是`HashMap`。请注意，我们不需要`Mutex`在这里，可以自信地说，在代理循环的每次迭代中，当前的对等体是什么
-3.  为了处理消息，我们通过渠道将其发送到每个目的地
-4.  为了处理新的对等方，我们首先在对等方的地图中注册它...
-5.  ...，然后产生一个专用任务，将消息实际写入套接字。
+1.  代理人（**Broker**）应处理两种类型的事件：一个消息，或一个新端点的到来。
+2.  代理人的内部状态是`HashMap`。请留意，在这里我们不需要`Mutex`，且可以自信地讲出，在代理人循环的每次迭代中，当前的端点集合(set of peers)是什么
+3.  为了处理消息，我们通过 channel，将其发送到每个目的地
+4.  为了处理新的 peer，我们首先在 peer 的 map 中，注册它...
+5.  ... 然后 spawn(孵) 一个专用任务（dedicated task），将消息实际写入 socket。

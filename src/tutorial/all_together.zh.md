@@ -1,6 +1,6 @@
 ## All Together
 
-在这一点上，我们只需要启动代理即可获得功能齐全的聊天室（在愉快的情况下！）：
+此时，我们只需要开始 broker，就可获得功能齐全的聊天室（在愉快的情况下！）：
 
 ```rust,edition2018
 # extern crate async_std;
@@ -135,7 +135,7 @@ async fn broker_loop(mut events: Receiver<Event>) -> Result<()> {
 }
 ```
 
-1.  在 - 的里面`accept_loop`，我们创建了经纪人的渠道，`task`。
-2.  内`connection_loop`，我们需要包装`TcpStream`变成一个`Arc`，以便能够与`connection_writer_loop`。
-3.  登录后，我们会通知经纪人。注意我们`.unwrap`在发送时：经纪人应该比所有客户都寿终正寝，如果不是这种情况，经纪人可能会感到恐慌，因此我们也可以升级恐慌。
-4.  同样，我们将已解析的消息转发给代理，并假设该消息仍处于活动状态。
+1.  在`accept_loop`里面，我们创建了 broker 的 channel，和`task`。
+2.  在`connection_loop`里面，我们需要将`TcpStream`包进一个`Arc`，以便能够与`connection_writer_loop`共享它。
+3.  登录后，我们会通知 broker。注意我们`.unwrap` on send： broker 应该比所有客户都长命，如果不是这种情况， broker 应该 panics，所以这个 panics 应该是致命的。
+4.  同样，我们将已解析的消息转发给 broker，并假设该消息仍处于活动状态。

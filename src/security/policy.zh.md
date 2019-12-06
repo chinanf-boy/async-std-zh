@@ -1,28 +1,28 @@
 # Policy
 
-安全是我们所做工作的核心原则之一，为此，我们要确保async-std具有安全的实现。感谢您抽出宝贵的时间来负责任地透露您发现的任何问题。
+安全是我们所做工作的核心原则之一，为此，我们要确保 async-std 具有安全的实现。感谢您抽出宝贵的时间，透露您发现的任何问题。
 
-异步std发行版中的所有安全错误应通过电子邮件报告至florian.gilcher@genic-systems.com。此列表已交付给小型安全团队。我们会在24小时内确认您的电子邮件，并且会在48小时内收到对电子邮件的更详细的回复，指示您处理报告的后续步骤。如果您愿意，您可以使用我们的公钥加密报告。该密钥也位于MIT的密钥服务器上，复制如下。
+async-std 发行版中，所有安全错误应通过电子邮件报告至 florian.gilcher@ferrous-systems.com 。列表已交付给小型安全团队。我们会在 24 小时内确认您的电子邮件，并且会在 48 小时内，收到对电子邮件的详细回复，指示您处理报告的后续步骤。如果您愿意，您可以使用我们的公钥加密报告。该密钥也位于 MIT 的密钥服务器上，复制如下。
 
-确保使用描述性主题行，以免错过报告。在对您的报告进行初次答复后，安全团队将努力使您了解有关修复和完整公告的进展情况。如推荐[RFPolicy][rf-policy]，这些更新将至少每五天发送一次。实际上，这更有可能是每24-48小时一次。
+确保使用一行，来描述主题，以免你的报告被错过。在对您的报告进行初次答复后，安全团队努力使您，了解有关修复和完整公告的进展情况。正如[RFPolicy][rf-policy]所推荐的，这些更新至少每五天发送一次。实际上，更有可能是每 24-48 小时一次。
 
-如果您在48小时内未收到对电子邮件的答复，或者在过去五天内没有收到安全团队的来信，则可以采取一些步骤（按顺序）：
+如果您在 48 小时内，未收到对电子邮件的答复，或者在过去五天内没有收到安全团队的来信，则可以采取一些步骤（按顺序）：
 
--   在我们的社区论坛上发帖
+- 在我们的社区论坛上发帖
 
-请注意，讨论论坛是公共区域。在这些场所中升级时，请勿讨论您的问题。只需说您正在设法与安全团队联系。
+请注意，讨论论坛是公共区域。在错误补丁更新过程，请勿讨论您的 issue。只需说，您正在设法与安全团队联系。
 
 [rf-policy]: https://en.wikipedia.org/wiki/RFPolicy
 
 ## Disclosure policy
 
-async-std项目具有5个步骤的公开过程。
+async-std 项目具有 5 个步骤的公开过程。
 
--   收到安全报告并将其分配给主要处理程序。此人将协调修复和发布过程。
--   确认此问题，并确定所有受影响版本的列表。
--   审核代码以发现任何潜在的类似问题。
--   已为仍在维护中的所有发行版准备了修复程序。这些修复程序不会提交给公共存储库，而是在发布之前在本地保存。
--   在禁运之日，更改将被推送到公共存储库，新版本将部署到crates.io。在6小时内，该通知的副本将发布在async.rs博客上。
+- The security report is received and is assigned a primary handler. This person will coordinate the fix and release process.
+- The problem is confirmed and a list of all affected versions is determined.
+- Code is audited to find any potential similar problems.
+- Fixes are prepared for all releases which are still under maintenance. These fixes are not committed to the public repository but rather held locally pending the announcement.
+- On the embargo date, the changes are pushed to the public repository and new builds are deployed to crates.io. Within 6 hours, a copy of the advisory will be published on the the async.rs blog.
 
 此过程可能需要一些时间，特别是在需要与其他项目的维护者进行协调时。我们将尽一切努力尽快解决该错误，但是，请务必遵循上面的发布流程，以确保以一致的方式处理该披露，这一点很重要。
 

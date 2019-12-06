@@ -1,12 +1,12 @@
 ## Handling Disconnections
 
-目前，我们只有*加*地图的新同伴。这显然是错误的：如果一个对等方关闭了与聊天的连接，我们不应尝试向其发送更多消息。
+目前，我们只对 map 有，*添加*新 peers 的操作。这显然是错误的：如果一个 peer 关闭了与 chat 的连接，我们就不应尝试向其发送更多消息。
 
-处理断开连接的一个细微之处是，我们可以在阅读者的任务中或在编写者的任务中检测到断开连接。这里最明显的解决方案是仅将对等方从`peers`在两种情况下都映射，但这是错误的。如果*都*读取和写入失败，我们将删除对等体两次，但在两种故障之间可能会重新连接对等体！为了解决这个问题，我们仅在写操作完成后才删除对等体。如果读取端完成，我们将通知写入端也应停止。也就是说，我们需要添加一种功能来发出信号以关闭编写器任务。
+处理断开连接的一个细微之处是，我们可以检测到，它是在 reader 的 task 中，还是在 writer 的 task 中。这里最显而易见的解决方案是：在两种情况下，试着仅将 peer 从`peers` map 中移除，但这是错误的。如果读取和写入（read and write）*两个*都失败，我们将会移除 peer 两次，但有种情况是，在两种错误之间， peer 重新连接上了！解决上面问题的思考是，我们仅在 write 端完结后，才移除 peer 。如果 read 端完结，我们将通知 write 端也应停止。也就是说，我们需要添加一项手段，发出信号，以关闭 writer task。
 
-解决这个问题的一种方法是`shutdown: Receiver<()>`渠道。但是，有一个更小的解决方案，它可以巧妙地使用RAII。关闭通道是一个同步事件，因此我们不需要发送关闭消息，只需丢弃发送者即可。这样，即使我们提前通过`?`或恐慌。
+解决这个问题的一种方法是`shutdown: Receiver<()>` channel。但是，有一个更小的解决方案，它可以巧妙地使用 RAII。 shutdown channel 是一个同步事件，因此我们不需要发送一个 shutdown 消息，只需丢弃 sender 即可。这样，即使我们的`?`或 panics 提前返回，我们也能坐享其成地确定，发出 shutdown 仅一次。
 
-首先，让我们向`connection_loop`：
+首先，让我们向`connection_loop`，添加一个 shutdown channel：
 
 ```rust,edition2018
 # extern crate async_std;
@@ -51,11 +51,11 @@ async fn connection_loop(mut broker: Sender<Event>, stream: Arc<TcpStream>) -> R
 }
 ```
 
-1.  为了强制没有消息通过关闭通道发送，我们使用了无人居住的类型。
-2.  我们将关闭通道传递给writer任务
-3.  在读者中，我们创建了一个`_shutdown_sender`唯一的目的就是放弃。
+1.  为了强制信息不通过 shutdown channel 发送，我们使用了仅作标记的类型。
+2.  我们将 shutdown channel 传递给 writer task
+3.  在 reader 中，我们创建了一个`_shutdown_sender`，其唯一的目的就是 get dropped。
 
-在里面`connection_writer_loop`，我们现在需要在关机和消息通道之间进行选择。我们使用`select`为此使用宏：
+在`connection_writer_loop`里面，我们现在需要在 shutdown 和 message channel 之间进行选择。为此，我们使用`select`宏：
 
 ```rust,edition2018
 # extern crate async_std;
@@ -96,11 +96,11 @@ async fn connection_writer_loop(
 }
 ```
 
-1.  我们添加关闭通道作为参数。
-2.  因为`select`，我们不能使用`while let`循环，所以我们将其进一步解糖`loop`。
-3.  在关机情况下，我们使用`match void {}`作为静态检查`unreachable!()`。
+1.  我们添加 shutdown channel 作为参数。
+2.  因为`select`，我们不能使用`while let`循环，所以我们将其 desugar(解语法糖) 到 `loop`。
+3.  在 shutdown 案例下，我们使用`match void {}`作为静态检查版的`unreachable!()`。
 
-另一个问题是，在我们检测到`connection_writer_loop`以及我们实际上从`peers`映射，新消息可能会被推送到对等方的频道中。为了不完全丢失这些消息，我们将消息通道返回给代理。这也使我们能够建立一个有用的不变式，即消息通道在消息通道中严格超过对等端。`peers`地图，并使经纪人本身无法失败。
+另一个问题是，新的信息可能会被推进 peer 的 channel，这问题发生的时机是，在我们在`connection_writer_loop`检测到 disconnection(断连)，和我们实际上从`peers` map 中移除这个 peer 之间。为了不完全失去这些消息，我们将 message channel 返回给 broker。这也使我们能够建立一个有用的不变式，message channel 在`peers` map 中，是严格要求'长命'过这个 peer 的，并使 broker 本身处于无法失败的状态。
 
 ## Final Code
 
@@ -285,9 +285,11 @@ where
 }
 ```
 
-1.  在代理中，我们创建一个渠道来获取断开连接的对等方及其未传递的消息。
-2.  当输入事件通道耗尽时（即，所有阅读器退出时），代理的主循环退出。
-3.  因为经纪人本身持有`disconnect_sender`，我们知道断开通道无法在主回路中完全排空。
-4.  我们将对等方的姓名和待处理消息发送到断开和断开通道中，它们的路径都比较愉快。同样，我们可以安全地解开包装，因为经纪人的寿命超过了作家。
-5.  我们掉落`peers`映射到关闭作者的消息通道，并确定关闭作者。在当前设置中，代理不一定要等待读者的关闭，在当前设置中并不是绝对必要的。但是，如果我们添加服务器启动的关机（例如，kbd：[ctrl+c]处理），这将是代理关闭编写器的一种方式。
-6.  最后，我们关闭并排干断开通道。
+1.  在 broker 中，我们创建一个 channel，来获取断开连接的 peer，及其未传递的消息。
+2.  当输入事件 channel 耗尽时（即，所有 readers 退出时）， broker 的 main 循环退出。
+3.  因为 broker 本身持有一个`disconnect_sender`，我们就知道在 main 循环中的 disconnections channel，无法完全排掉。
+4.  我们将 peer 的 name 和待处理消息（pending messages），发送到 disconnections channel ，这里有两条路径，一条快乐，一条不是太快乐(in both the happy and the not-so-happy path)。
+    同样，我们可以安全地 unwrap，因为 broker 的生命周期是超过 writers 的。
+5.  我们 drop `peers` map ，以关闭 writers 的 message channel ，并确定关闭 writers。
+    在当前设置中， broker 等待 reader 的关闭，其实并不是绝对必要的。但是，如果我们要添加一个 server-initiated shutdown（例如，kbd：[ctrl+c] 处理），这将是 broker 关闭 writers 的一种方式。
+6.  最后，我们关闭，并排干 disconnections channel 。

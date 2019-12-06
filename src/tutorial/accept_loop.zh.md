@@ -1,6 +1,6 @@
 ## Writing an Accept Loop
 
-让我们实现服务器的支架：一个将TCP套接字绑定到地址并开始接受连接的循环。
+让我们实现服务器的支架：一个循环，它将 TCP socket 绑定到地址，并开始接受连接。
 
 首先，让我们添加所需的导入样板：
 
@@ -15,12 +15,12 @@ use async_std::{
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>; // 4
 ```
 
-1.  `prelude`重新导出与期货和数据流一起使用所需的某些特征。
-2.  的`task`模块大致对应于`std::thread`模块，但任务轻得多。一个线程可以运行许多任务。
-3.  对于插座类型，我们使用`TcpListener`从`async_std`，就像`std::net::TcpListener`，但不阻塞并且使用`async`API。
-4.  在此示例中，我们将跳过实现全面的错误处理。为了传播错误，我们将使用装箱的错误特征对象。你知道吗`From<&'_ str> for Box<dyn Error>`stdlib中的实现，它允许您将字符串与`?`操作员？
+1.  `prelude`重新导出与 futures 和 streams 一起使用，所需的某些 trait。
+2.  `task`模块大致对应`std::thread`模块，但 task 轻得多。一个线程(thread)可以运行许多 tasks。
+3.  对于 socket 类型，我们使用`TcpListener`，来自`async_std`，它就像`std::net::TcpListener`，但非-阻塞，并且使用`async`API。
+4.  在此示例中，我们会跳过实现全面的错误处理。为了传播错误，我们将使用装箱的（boxed） error trait 对象。你知道 stdlib 中，有个`From<&'_ str> for Box<dyn Error>`实现吗，它允许您将字符串`?`操作符？
 
-现在我们可以编写服务器的accept循环：
+现在我们可以编写服务器的 接收 循环：
 
 ```rust,edition2018
 # extern crate async_std;
@@ -42,9 +42,11 @@ async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> { // 1
 }
 ```
 
-1.  我们标记`accept_loop`作为`async`，这使我们可以使用`.await`内部语法。
-2.  `TcpListener::bind`通话返回了一个未来，我们`.await`提取`Result`， 然后`?`得到一个`TcpListener`。注意如何`.await`和`?`一起很好地工作。就是这样`std::net::TcpListener`可以，但是`.await`添加。的镜像API`std`是一个明确的设计目标`async_std`。
-3.  在这里，我们想迭代传入的套接字，就像在套接字中那样`std`：
+1.  我们将`accept_loop`函数标记上了`async`，这使我们可以在内部使用`.await`语法。
+2.  `TcpListener::bind` call 返回了一个 Future，此处，我们会`.await`(等待)，提取出`Result`，然后`?`得到一个`TcpListener`。
+    注意`.await`和`?`的良好合作。这与`std::net::TcpListener`的工作如此相同，但多个`.await`而已。
+    对`std` API 施行镜像魔法，是`async_std`的一个明确的设计目标。
+3.  在这里，我们想迭代传入的 socket，就像在常规`std`中的那样：
 
 ```rust,edition2018,should_panic
 let listener: std::net::TcpListener = unimplemented!();
@@ -52,9 +54,9 @@ for stream in listener.incoming() {
 }
 ```
 
-不幸的是，这不适用于`async`但是，因为不支持`async`语言中的for循环。因此，我们必须使用`while let Some(item) = iter.next().await`图案。
+不幸的是，目前这还不适用于`async`，因为在语言中，还不支持`async` for 循环。因此，我们必须手动实现循环，通过使用`while let Some(item) = iter.next().await`模式。
 
-最后，让我们添加main：
+最后，让我们添加 main：
 
 ```rust,edition2018
 # extern crate async_std;
@@ -82,4 +84,4 @@ fn run() -> Result<()> {
 }
 ```
 
-意识到这一点的关键是在Rust中，与其他语言不同，调用异步函数可以**不**运行任何代码。异步功能仅构造期货，它们是惰性状态机。要开始通过异步功能逐步遍历未来的状态机，您应该使用`.await`。在非异步函数中，执行Future的一种方法是将其交给执行者。在这种情况下，我们使用`task::block_on`在当前线程上执行Future并阻塞直到完成。
+意识到这一点的关键是，Rust 与其他语言不同，调用异步函数确实是**不**运行任何代码的。异步函数仅构造 Future，它们是惰性状态机。要在一个异步函数中，开始逐步遍历 Future 状态机，您应该使用`.await`。在非异步函数中，执行 Future 的一种方法是将其交给 executor。在这种情况下，我们会使用`task::block_on`，在当前线程上对 Future 执行并阻塞，直到它完成。

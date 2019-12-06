@@ -15,7 +15,7 @@
 
 ---
 
-## 校对 🀄️
+## 校对 ✅
 
 <!-- doc-templite START generated -->
 <!-- repo = 'async-rs/async-std' -->
@@ -32,30 +32,30 @@
 <!-- doc-templite END generated -->
 
 - [x] [SUMMARY](src/SUMMARY.md)
-- [ ] [介绍](src/introduction.zh.md)
-  - [ ] [欢迎来到`async-std`！](src/overview/async-std.zh.md)
-  - [ ] [`std::future`和`futures-rs`](src/overview/std-and-library-futures.zh.md)
-  - [ ] [稳定性保证](src/overview/stability-guarantees.zh.md)
-- [ ] [使用 async-std 的异步概念](src/concepts.zh.md)
-  - [ ] [Futures](src/concepts/futures.zh.md)
-  - [ ] [Tasks](src/concepts/tasks.zh.md)
-  - [ ] [异步读/写](src/concepts/async-read-write.zh.md)
-  - [ ] [Streams and Channels](src/concepts/streams.zh.md)
-- [ ] [教程：实现聊天](src/tutorial/index.zh.md)
-  - [ ] [规格和入门](src/tutorial/specification.zh.md)
-  - [ ] [编写一个 Accept 循环](src/tutorial/accept_loop.zh.md)
-  - [ ] [接收讯息](src/tutorial/receiving_messages.zh.md)
-  - [ ] [发送讯息](src/tutorial/sending_messages.zh.md)
-  - [ ] [连接读者和作家](src/tutorial/connecting_readers_and_writers.zh.md)
-  - [ ] [全部一起来](src/tutorial/all_together.zh.md)
-  - [ ] [干净地关机](src/tutorial/clean_shutdown.zh.md)
-  - [ ] [处理断开连接](src/tutorial/handling_disconnection.zh.md)
-  - [ ] [实现一个 Client](src/tutorial/implementing_a_client.zh.md)
+- [x] [介绍](src/introduction.zh.md)
+  - [x] [欢迎来到`async-std`！](src/overview/async-std.zh.md)
+  - [x] [`std::future`和`futures-rs`](src/overview/std-and-library-futures.zh.md)
+  - [x] [稳定性保证](src/overview/stability-guarantees.zh.md)
+- [x] [使用 async-std 的异步概念](src/concepts.zh.md)
+  - [x] [Futures](src/concepts/futures.zh.md)
+  - [x] [Tasks](src/concepts/tasks.zh.md)
+  - [ ] [TODO：异步读/写](src/concepts/async-read-write.zh.md)
+  - [ ] [TODO：Streams 和 Channels](src/concepts/streams.zh.md)
+- [x] [教程：实现聊天](src/tutorial/index.zh.md)
+  - [x] [规格和入门](src/tutorial/specification.zh.md)
+  - [x] [编写一个 Accept 循环](src/tutorial/accept_loop.zh.md)
+  - [x] [接收讯息](src/tutorial/receiving_messages.zh.md)
+  - [x] [发送讯息](src/tutorial/sending_messages.zh.md)
+  - [x] [连接 Readers 和 Writers](src/tutorial/connecting_readers_and_writers.zh.md)
+  - [x] [全部一起](src/tutorial/all_together.zh.md)
+  - [x] [干净关闭](src/tutorial/clean_shutdown.zh.md)
+  - [x] [处理断开连接](src/tutorial/handling_disconnection.zh.md)
+  - [x] [实现一个 Client](src/tutorial/implementing_a_client.zh.md)
 - [ ] [TODO：异步模式](src/patterns.zh.md)
   - [ ] [TODO：收集的小模式](src/patterns/small-patterns.zh.md)
-- [ ] [安全实践](src/security/index.zh.md)
-  - [ ] [安全披露和政策](src/security/policy.zh.md)
-- [ ] [术语](src/glossary.zh.md)
+- [x] [安全实践](src/security/index.zh.md)
+  - [x] [安全披露和政策](src/security/policy.zh.md)
+- [x] [术语](src/glossary.zh.md)
 
 ### 贡献
 

@@ -1,17 +1,17 @@
 ## Clean Shutdown
 
-当前实现的问题之一是它无法处理正常关机。如果由于某种原因我们中断了accept循环，则所有正在进行的任务都将落在地板上。更正确的关闭顺序为：
+当前实现的问题之一是，它无法处理正常关机。如果由于某种原因，我们的 接收 循环中断了，则所有正在进行的任务都将遗弃在地上。更正确的关闭顺序为：
 
 1.  停止接受新客户
-2.  传递所有未决消息
+2.  传递所有未解决的（pending）消息
 3.  退出程序
 
-基于通道的体系结构中的干净关闭很容易，尽管它一开始可能看起来很神奇。在Rust中，一旦所有发送者都被丢弃，通道的接收者一侧就会关闭。也就是说，一旦生产者退出并丢弃他们的发送者，系统的其余部分就会自然关闭。在`async_std`这转化为两个规则：
+基于 channel 的体系结构，其干净关闭很容易，尽管它一开始可能看起来很神奇。在 Rust 中，一旦所有发送端（senders）都被丢弃，通道的接收端（receiver）一侧就会关闭。也就是说，一旦生产者退出，并丢弃他们的发送端，系统的其余部分就会自然关闭。在`async_std`中，这套形式转化为两个规则：
 
-1.  确保通道形成一个非循环图。
-2.  注意以正确的顺序等待，直到系统的中间层处理挂起的消息。
+1.  确保 channel 形成一个非循环图。
+2.  注意以正确的顺序等待，直到系统的中间层处理 pending 消息。
 
-在`a-chat`，我们已经有一个单向消息流：`reader -> broker -> writer`。但是，我们从不等待经纪人和作家，这可能会导致某些消息丢失。让我们添加等待到服务器：
+在`a-chat`，我们已经有一个单向消息流：`reader -> broker -> writer`。但是，我们从不等待 broker 和 writers，这可能会导致某些消息丢失。让我们添加等待，到服务器：
 
 ```rust,edition2018
 # extern crate async_std;
@@ -144,7 +144,7 @@ async fn accept_loop(addr: impl ToSocketAddrs) -> Result<()> {
 }
 ```
 
-并向经纪人：
+还有向 broker 添加：
 
 ```rust,edition2018
 # extern crate async_std;
@@ -235,10 +235,10 @@ async fn broker_loop(mut events: Receiver<Event>) -> Result<()> {
 }
 ```
 
-注意一旦退出accept循环，所有通道都会发生什么情况：
+注意一旦退出 accept 循环，所有 channel 都会发生下面情况：
 
-1.  首先，我们删除主要经纪人的发件人。这样，当阅读器完成时，经纪人通道的发送者就没有了，香奈儿关闭了。
-2.  接下来，经纪人退出`while let Some(event) = events.next().await`环。
-3.  至关重要的是，在此阶段，我们放弃`peers`地图。这会降低作者的发件人。
-4.  现在我们可以加入所有作家。
-5.  最后，我们加入经纪人，这也保证所有写操作都已终止。
+1.  首先，我们弃掉 main broker 的 sender。这样，当 readers 完成时， broker 的 channel sender 就没有了，且 channel 关闭了。
+2.  接下来， broker 退出`while let Some(event) = events.next().await`循环。
+3.  至关重要的是，在此阶段，我们弃掉了`peers` map。这会弃掉 writer 的 senders。
+4.  现在我们可以 join 所有 writers。
+5.  最后，我们 join broker ，这也保证所有 write 操作都已终止。
